@@ -1,0 +1,16 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.Python
+
+# OS / editor
+.DS_Store
+
+# Large / generated (adjust if you use Git LFS for these)
+*.pt
+*.onnx
+*.mp4
+tracking_results*.csv
+final_output.mp4

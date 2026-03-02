@@ -1,0 +1,9 @@
+path: "/Users/rahulr/projects/vehicle and helmet detection/dataset"
+train: images/train
+val: images/val
+
+names:
+  0: number plate
+  1: without helmet
+  2: with helmet
+  3: rider
