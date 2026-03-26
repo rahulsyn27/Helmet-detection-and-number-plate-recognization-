@@ -1,3 +1,4 @@
+"""Interactive entry: run tracking, interpolation, and final video render."""
 import os
 import main_pipeline
 import add_missing_data
