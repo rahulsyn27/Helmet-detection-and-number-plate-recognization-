@@ -1,4 +1,6 @@
+import cv2
 import easyocr
+import re
 
 # Initialize the OCR reader (Turn gpu=True if you eventually run this on a CUDA machine)
 reader = easyocr.Reader(['en'], gpu=False)
@@ -33,20 +35,57 @@ def write_csv(results, output_path):
                     frame_nmr, rider_id, r_bbox, h_status, h_bbox, h_score, p_bbox, p_score, p_text, p_text_score
                 ))
 
-def read_license_plate(license_plate_crop):
+def preprocess_plate(plate_crop):
     """
-    Reads text from the cropped plate. We removed the strict 7-character limit 
-    so it correctly captures varying plate formats.
+    Applies the professional OCR preprocessing pipeline:
+    Resize -> Grayscale -> Blur -> Binarization
     """
-    detections = reader.readtext(license_plate_crop)
+    # 1. Resize: EasyOCR reads larger text much better. Double the size.
+    plate_crop = cv2.resize(plate_crop, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    
+    # 2. Grayscale
+    gray = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
+    
+    # 3. Blurring: Removes camera noise while keeping edges sharp
+    blur = cv2.bilateralFilter(gray, 11, 17, 17)
+    
+    # 4. Binarization: Otsu's method automatically calculates the perfect threshold
+    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    return thresh
+
+def is_valid_indian_plate(text):
+    """
+    Checks if the text loosely matches an Indian number plate format.
+    Standard: 2 Letters (State) + 2 Numbers (RTO) + 1-2 Letters + 4 Numbers.
+    We keep it slightly loose to account for minor OCR mistakes.
+    """
+    # Total length should be between 7 and 11 characters.
+    if len(text) < 7 or len(text) > 11:
+        return False
+        
+    # Basic regex: Starts with letters, ends with numbers
+    pattern = re.compile(r'^[A-Z]{2}[0-9A-Z]+[0-9]{3,4}$')
+    return bool(pattern.match(text))
+
+def read_license_plate(plate_crop):
+    """
+    Reads the text from the preprocessed plate using an allowlist.
+    """
+    # Clean the image using our new pipeline
+    clean_plate = preprocess_plate(plate_crop)
+    
+    # Force EasyOCR to ONLY look for uppercase letters and numbers
+    detections = reader.readtext(clean_plate, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
 
     for detection in detections:
         bbox, text, score = detection
-        # Clean up the OCR text (remove spaces and weird characters)
-        text = text.upper().replace(' ', '').replace('_', '').replace('-', '')
         
-        # As long as the OCR found at least 4 alphanumeric characters, accept it
-        if len(text) >= 4:
+        # Strip out any accidental whitespace
+        text = text.upper().replace(' ', '')
+        
+        # Check against our Indian plate format logic
+        if is_valid_indian_plate(text):
             return text, score
 
     return None, None

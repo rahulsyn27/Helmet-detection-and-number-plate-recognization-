@@ -76,17 +76,36 @@ def main(video_path):
                 }
 
             # --- Check for a matched Number Plate ---
+            # matched_plate = assign_to_rider(track, plates)
+            # if matched_plate:
+            #     px1, py1, px2, py2, p_score, _ = matched_plate
+                
+            #     # Crop and process license plate for OCR
+            #     plate_crop = frame[int(py1):int(py2), int(px1):int(px2), :]
+            #     plate_crop_gray = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
+            #     _, plate_crop_thresh = cv2.threshold(plate_crop_gray, 64, 255, cv2.THRESH_BINARY_INV)
+
+            #     # Read text using EasyOCR
+            #     plate_text, plate_text_score = read_license_plate(plate_crop_thresh)
+
+            #     if plate_text is not None:
+            #         results[frame_nmr][rider_id]['license_plate'] = {
+            #             'bbox': [px1, py1, px2, py2],
+            #             'text': plate_text,
+            #             'bbox_score': p_score,
+            #             'text_score': plate_text_score
+            #         }
+            # --- Check for a matched Number Plate ---
             matched_plate = assign_to_rider(track, plates)
             if matched_plate:
                 px1, py1, px2, py2, p_score, _ = matched_plate
                 
-                # Crop and process license plate for OCR
+                # Crop the raw license plate from the original frame
                 plate_crop = frame[int(py1):int(py2), int(px1):int(px2), :]
-                plate_crop_gray = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
-                _, plate_crop_thresh = cv2.threshold(plate_crop_gray, 64, 255, cv2.THRESH_BINARY_INV)
 
-                # Read text using EasyOCR
-                plate_text, plate_text_score = read_license_plate(plate_crop_thresh)
+                # Pass the RAW crop directly to our upgraded util function.
+                # It handles the Grayscale, Blur, and Thresholding internally now!
+                plate_text, plate_text_score = read_license_plate(plate_crop)
 
                 if plate_text is not None:
                     results[frame_nmr][rider_id]['license_plate'] = {
@@ -95,7 +114,6 @@ def main(video_path):
                         'bbox_score': p_score,
                         'text_score': plate_text_score
                     }
-
     # 5. Write all results to CSV
     write_csv(results, './tracking_results.csv')
     print("Video processing complete! Data saved to tracking_results.csv")
