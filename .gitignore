@@ -14,3 +14,8 @@ __pycache__/
 *.mp4
 tracking_results*.csv
 final_output.mp4
+
+# Generated outputs / temp files
+plate_crops/
+sort/.*_db.txt
+.DS_Store
