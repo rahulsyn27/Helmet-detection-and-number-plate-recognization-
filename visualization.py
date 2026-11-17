@@ -311,22 +311,46 @@ def main(video_path):
                 px1, py1, px2, py2 = plate_bbox
                 cv2.rectangle(frame, (px1, py1), (px2, py2), (255, 0, 0), 2) 
 
+            # info = rider_info.get(rider_id, {'text': "NO PLATE", 'crop': None})
+            # plate_text = info['text']
+            
+            # text_bg_y1 = max(0, ry1 - 60)
+            # cv2.rectangle(frame, (rx1, text_bg_y1), (rx1 + 250, ry1), color, -1)
+            
+            # cv2.putText(frame, display_text, (rx1 + 5, text_bg_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # cv2.putText(frame, f"Plate: {plate_text}", (rx1 + 5, text_bg_y1 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+            # crop = info['crop']
+            # if crop is not None:
+            #     ch, cw, _ = crop.shape
+            #     if text_bg_y1 + ch < height and rx1 + 250 + cw < width:
+            #         frame[text_bg_y1:text_bg_y1+ch, rx1+250:rx1+250+cw] = crop
+            #         cv2.rectangle(frame, (rx1+250, text_bg_y1), (rx1+250+cw, text_bg_y1+ch), color, 2)
             info = rider_info.get(rider_id, {'text': "NO PLATE", 'crop': None})
             plate_text = info['text']
             
-            text_bg_y1 = max(0, ry1 - 60)
-            cv2.rectangle(frame, (rx1, text_bg_y1), (rx1 + 250, ry1), color, -1)
-            
-            cv2.putText(frame, display_text, (rx1 + 5, text_bg_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-            cv2.putText(frame, f"Plate: {plate_text}", (rx1 + 5, text_bg_y1 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # --- NEW LOGIC: Only show plate if they are violating the rule ---
+            if helmet_status == 'Without Helmet':
+                # VIOLATOR: Draw a tall box (60px) and show ID, Status, Plate Text, and Plate Image
+                text_bg_y1 = max(0, ry1 - 60)
+                cv2.rectangle(frame, (rx1, text_bg_y1), (rx1 + 280, ry1), color, -1)
+                
+                cv2.putText(frame, f"ID: {rider_id} | {display_text}", (rx1 + 5, text_bg_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                cv2.putText(frame, f"Plate: {plate_text}", (rx1 + 5, text_bg_y1 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-            crop = info['crop']
-            if crop is not None:
-                ch, cw, _ = crop.shape
-                if text_bg_y1 + ch < height and rx1 + 250 + cw < width:
-                    frame[text_bg_y1:text_bg_y1+ch, rx1+250:rx1+250+cw] = crop
-                    cv2.rectangle(frame, (rx1+250, text_bg_y1), (rx1+250+cw, text_bg_y1+ch), color, 2)
-
+                crop = info['crop']
+                if crop is not None:
+                    ch, cw, _ = crop.shape
+                    if text_bg_y1 + ch < height and rx1 + 280 + cw < width:
+                        frame[text_bg_y1:text_bg_y1+ch, rx1+280:rx1+280+cw] = crop
+                        cv2.rectangle(frame, (rx1+280, text_bg_y1), (rx1+280+cw, text_bg_y1+ch), color, 2)
+                        
+            else:
+                # SAFE RIDER: Draw a sleek short box (30px) and ONLY show the ID and Status
+                text_bg_y1 = max(0, ry1 - 30)
+                cv2.rectangle(frame, (rx1, text_bg_y1), (rx1 + 280, ry1), color, -1)
+                
+                cv2.putText(frame, f"ID: {rider_id} | {display_text}", (rx1 + 5, text_bg_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         out.write(frame)
         frame_nmr += 1
 
